@@ -20,6 +20,13 @@ public class XUrlMain {
     System.out.println(url3);
     System.out.println(url4);
 
+    // String result1 = xUrl.delete("http://abc1.com");
+    // System.out.println(result1);
+
+    // String result = xUrl.getUrl(url1);
+    // System.out.println(result);
+
+    
     // Update new URL mapping to a custom short URL
     String url5 = xUrl.registerNewUrl("http://abc5.com", "http://short.url/test1");
     String url6 = xUrl.registerNewUrl("http://abc6.com", "http://short.url/test2");
