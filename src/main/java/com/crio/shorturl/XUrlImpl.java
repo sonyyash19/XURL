@@ -1,59 +1,69 @@
 package com.crio.shorturl;
-import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 public class XUrlImpl implements XUrl{
 
-    private HashMap<String, String> map = new HashMap<>();
-    private String shortUrl = "";
-    private HashMap<String, Integer> hitLongUrlCount = new HashMap<>();
+    private HashMap<String, String> longToShort;
+    private HashMap<String, String> shortToLong;
+    private HashMap<String, Integer> hitLongUrlCount;
+    SlugGenerator slugGenerator;
+    private static final String URL = "http://short.url/";
+
+    public XUrlImpl(){
+        longToShort = new HashMap<>();
+        shortToLong = new HashMap<>();
+        hitLongUrlCount = new HashMap<>();
+        slugGenerator = new SlugGenerator();
+
+    }
 
     @Override
     public String registerNewUrl(String longUrl) {
-        if(map.containsKey(longUrl)){
-            shortUrl = map.get(longUrl);
-            return shortUrl;
+        if(longToShort.containsKey(longUrl)){
+            return URL + longToShort.get(longUrl);
         }
 
-        String AlphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    + "0123456789"
-    + "abcdefghijklmnopqrstuvxyz";
+        String slug = slugGenerator.generateRandomString();
 
-     StringBuilder sb = new StringBuilder(9);
+        longToShort.put(longUrl, slug);
+        shortToLong.put(slug, longUrl);
+        hitLongUrlCount.put(longUrl, 0);
 
-        for(int i = 0; i < 9; i++){
-            int index = (int) (AlphaNumericString.length() * Math.random());
-            sb.append(AlphaNumericString.charAt(index));
-        }
-
-        shortUrl = "http://short.url/" + sb;
-        map.put(longUrl, shortUrl);
-        return shortUrl;
+        return URL + slug;
     }
 
     @Override
     public String registerNewUrl(String longUrl, String shortUrl) {
+
+        String slug = shortUrl.replace(URL, "");
         
-        // if(map.containsKey(longUrl)){
-        //     // throw new ConcurrentModificationException("Specified url already present.");
-        //     return "Specified url already present";
-        // }
-        if(map.containsValue(shortUrl)){
-            // throw new ConcurrentModificationException("Specified SHORTURL already present.");
+        if(longToShort.containsValue(slug)){
             return null;
         }
 
-        map.put(longUrl, shortUrl);
+        longToShort.put(longUrl, slug);
+        shortToLong.put(slug, longUrl);
+        hitLongUrlCount.put(longUrl, 0);
         
-        return shortUrl;
+        return URL + slug;
     }
 
-    // private static boolean isAlphaNumeric(String s) {
-    //     return s != null && s.matches("^[a-zA-Z0-9]*$");
-    // }
+    @Override
+    public String getUrl(String shortUrl){
 
+        String longUrl = shortToLong.get(shortUrl.replace(URL, ""));
+
+        if(longUrl != null){
+            hitLongUrlCount.compute(longUrl, (k ,v) -> v + 1);
+        }
+
+        return longUrl;
+    }
+
+
+    /* OLD IMPLEMENTATION FOR RETURNING LONG URL
     @Override
     public String getUrl(String shortUrl) {
         if(!(map.containsValue(shortUrl))){
@@ -84,20 +94,18 @@ public class XUrlImpl implements XUrl{
         }
         return key;
   
-    }
+    } */
 
     @Override
     public Integer getHitCount(String longUrl) {
-        Integer hitCount = hitLongUrlCount.get(longUrl);
-        if(hitCount == null){
-            return 0;
-        }
-        return hitCount;
+        return hitLongUrlCount.getOrDefault(longUrl, 0);
     }
 
     @Override
     public String delete(String longUrl) {
-        return map.remove(longUrl);
+        String slug = longToShort.remove(longUrl);
+        shortToLong.remove(slug);
+        return URL + slug;
     }
 
 }
